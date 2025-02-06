@@ -1,6 +1,9 @@
-import { useState, useEffect, useMemo,useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import './App.css';
-import Card from './components/Card';
+import Card from './components/Card/Card';
+import DropDown from './components/DropDown/DropDown';
+import GameResult from './components/GameResult/GameResult';
+import toTimeString from './tool/toTimeString';
 
 const audio_correct = document.createElement("audio");
 audio_correct.src =
@@ -19,116 +22,119 @@ audio_incorect.src =
 function App() {
   const [level, setLevel] = useState(4);
   const [cardStyle, setCardStyle] = useState('classic');
-  //
   const [cards, setCards] = useState([]);
   const [choices, setChoices] = useState([]);
+  const [started, setStart] = useState(false);
   //use to save which card is matched
   const matchRef = useRef(new Set());
-  const timerId = useRef(-1);
+  const timerIdRef = useRef(-1);
   const cardContainerRef = useRef(null);
+  const cardIdRef = useRef(0);
   const [remainCard, setRemainCard] = useState(-1);
   const [move, setMove] = useState(0);
   const [time, setTime] = useState(0);
 
   useEffect(() => {
     if (localStorage.getItem('cards_info')) {
-      // getInfo();
+      getInfo();
       reloadPrevState();
     }
-    window.addEventListener('focus', handleFocus);
-    window.addEventListener('blur', handleBlur);
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => {
-      window.removeEventListener('focus', handleFocus);
-      window.removeEventListener('blur', handleBlur);
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
+    // window.addEventListener('focus', handleFocus);
+    // return () => {
+    //   window.removeEventListener('focus', handleFocus);
+    //   localStorage.setItem('moves', JSON.stringify(move));
+    //   localStorage.setItem('times', JSON.stringify(time));
+    // };
   }, []);
+
+
   const handleFocus = () => {
-    // if (localStorage.getItem('cards_info')) {
-    //   getInfo();
-    //   reloadPrevState();
-    // }
+    if (localStorage.getItem('cards_info')) {
+      getInfo();
+      reloadPrevState();
+    }
   };
 
-  const handleBlur = () => {
-    saveInfo();
-  };
 
-  const handleBeforeUnload = () => {
-    saveInfo();
-  };
-
-  const saveInfo = () => {
-    // localStorage.setItem('card_match', JSON.stringify([...matchSet.values()]));
-    // localStorage.setItem('cards_info', JSON.stringify(cards.map(card => card.dataset.value)));
-    // localStorage.setItem('moves', JSON.stringify(move));
+  // const saveInfo = () => {
+    // localStorage.setItem('card_match', JSON.stringify([...matchRef.current.values()]));
+    // localStorage.setItem('cards_info', JSON.stringify(cards));
     // localStorage.setItem('times', JSON.stringify(time));
-  };
+  // };
 
   const getInfo = () => {
-    // const savedCardsInfo = JSON.parse(localStorage.getItem('cards_info') || '[]');
-    // const savedMatchSet = new Set(JSON.parse(localStorage.getItem('card_match') || '[]'));
-    // const savedMove = JSON.parse(localStorage.getItem('moves') || '0') - 1;
-    // const savedTime = JSON.parse(localStorage.getItem('times') || '0') - 1;
-    // setCards(savedCardsInfo);
-    // setMatchSet(savedMatchSet);
-    // setMove(savedMove);
-    // setTime(savedTime);
+    const savedCardsInfo = JSON.parse(localStorage.getItem('cards_info') || '[]');
+    const savedMatchSet = new Set(JSON.parse(localStorage.getItem('card_match') || '[]'));
+    const savedMove = JSON.parse(localStorage.getItem('moves') || '0');
+    const savedTime = JSON.parse(localStorage.getItem('times') || '0');
+    console.log(savedMove);
+    console.log(savedTime);
+    setCards(savedCardsInfo);
+    matchRef.current = savedMatchSet;
+    setMove(savedMove);
+    setTime(savedTime);
   };
 
   const reloadPrevState = () => {
-    // const savedLevel = JSON.parse(localStorage.getItem('level') || '4');
-    // setLevel(savedLevel);
-    // setCardStyle(localStorage.getItem('card_type') || 'classic');
-    // ...existing code...
+    const savedLevel = JSON.parse(localStorage.getItem('level') || '4');
+    setLevel(savedLevel);
+    setCardStyle(localStorage.getItem('card_type') || 'classic');
+    cardContainerRef.current.style.gridTemplateColumns = `repeat(${savedLevel}, 1fr)`;
+    let countRemain = 0;
+    for (let i = 0; i < cards.length; i++) {
+      const num = cards[i];
+      if (!matchRef.current.has(num)) {
+        countRemain++;
+      }
+      //create a card from card info
+    }
+    cardIdRef.current++;
+    updateMove();
+    updateTime();
+    clearInterval(timerIdRef.current);
+    setStart(true);
+    setRemainCard(countRemain);
+    timerIdRef.current = setInterval(updateTime,1000);
   };
 
   const restart = () => {
-    // localStorage.clear();
+    localStorage.clear();
     matchRef.current = new Set();
     setChoices([]);
-    // localStorage.setItem('level', JSON.stringify(level));
-    // localStorage.setItem('card_type', cardStyle);
+    localStorage.setItem('level', JSON.stringify(level));
+    localStorage.setItem('card_type', cardStyle);
     const cards_cur = [];
     //calculate card amount needed
     const card_amount = (level * level) / 2;
     //create cards
     for (let i = 1; i <= card_amount; i++) {
       //create 2 pair and put in array
-      const card1 = i;
-      const card2 = i;
-      cards_cur.push(card1,card2);
+      cards_cur.push(i,i);
     }
     cardContainerRef.current.style.gridTemplateColumns = `repeat(${level}, 1fr)`;
-    setRemainCard(card_amount*2)
+    setRemainCard(card_amount*2);
+    cardIdRef.current +=1;
     //shuffle cards
     cards_cur.sort(() => Math.random() - 0.5);
     setCards(cards_cur);
-    //save cards order for the local storage
-    // cards_info = cards.map((card) => card.dataset.value);
-    //change grid style for card container
-    // card_container.style.gridTemplateColumns = `repeat(${level}, 1fr)`;
-    // updateUI();
-    // cards.forEach((card) => card_container.appendChild(card));
     //reset time and move
-    clearInterval(timerId.current);
+    clearInterval(timerIdRef.current);
     updateMove(0);
     updateTime(true);
-    //hide game_over_info
-    // game_win_info.style.visibility = "hidden";
-    timerId.current = setInterval(updateTime, 1000);
-    // saveInfo();
+    timerIdRef.current = setInterval(updateTime, 1000);
+    localStorage.setItem('cards_info', JSON.stringify(cards_cur));
   };
 
   const updateMove = (newMove = -1) => {
     if (newMove !== -1) setMove(newMove);
     else setMove(prevMove => prevMove + 1);
+    localStorage.setItem('moves', JSON.stringify(move));
   };
 
   const updateTime = (restart = false) => {
     if (restart) setTime(0);
     else setTime(prevTime => prevTime + 1);
+    localStorage.setItem('times', JSON.stringify(time));
   };
   const onClickCard = (flipped,card) => {
     if (flipped) {
@@ -137,9 +143,11 @@ function App() {
         updateMove();
         const first = choices[0];
         const second = card;
+        //on match
         if (first.dataset.value === second.dataset.value) {
           //save match info to local storage later
           matchRef.current.add(first.dataset.value);
+          localStorage.setItem('card_match', JSON.stringify([...matchRef.current.values()]));
           //set matched to true
           first.dataset.matched = true;
           second.dataset.matched = true;
@@ -155,7 +163,7 @@ function App() {
           //check if all cards are matched
           if (remain <= 0) {
             audio_gameover.play();
-            clearInterval(timerId.current);
+            clearInterval(timerIdRef.current);
           }
           setRemainCard(remain);
         } else {
@@ -183,46 +191,27 @@ function App() {
     <div id="game_container">
       <h1>Memory Game</h1>
       <div id="game_controls">
-        <label>
-          Choose level:
-          <select value={level} onChange={(e) => setLevel(Number(e.target.value))}>
-            <option value="4">Easy</option>
-            <option value="6">Medium</option>
-            <option value="8">Hard</option>
-          </select>
-        </label>
-        <label>
-          Choose card type:
-          <select value={cardStyle} onChange={(e) => setCardStyle(e.target.value)}>
-            <option value="classic">Classic</option>
-            <option value="drawing">Drawing</option>
-          </select>
-        </label>
+        <DropDown title="Choose level:" optionsTitle={["Easy","Medium","Hard"]} optionsValue={[4,6,8]} onChange={(val)=>setLevel(val)} value={level}/>
+        <DropDown title="Choose card type:" optionsTitle={["Classic","Drawing"]} optionsValue={["classic","drawing"]} onChange={(val)=>setCardStyle(val)} value={cardStyle}/>
         <button onClick={restart}>Start Game</button>
       </div>
       <div id="game_info">
         <p>Move: <span>{move}</span></p>
-        <p>Time: <span>{`${Math.floor(time / 60).toString().padStart(2, '0')}:${(time % 60).toString().padStart(2, '0')}`}</span></p>
+        <p>Time: <span>{toTimeString(time)}</span></p>
       </div>
       <div id="cards_container" ref={cardContainerRef}>
         {cards.map((card_i, index) => (
           <Card
-            key={index+level}
+            key={index}
+            cardKey={index+""+cardIdRef.current}
             indexCard={card_i}
             cardStyle={cardStyle}
             isMatched={matchRef.current.has(card_i)}
             onClick={onClickCard}
           />))}
       </div>
-
-     {remainCard==0 && <div id="game_win_background">
-        <div id="game_win_container">
-          <h2>Congratulations! You won!</h2>
-          <p>Total Moves: <span>{move}</span></p>
-          <p>Total Time: <span>{`${Math.floor(time / 60).toString().padStart(2, '0')}:${(time % 60).toString().padStart(2, '0')}`}</span></p>
-          <button onClick={restart}>Play Again</button>
-        </div>
-      </div>}
+      
+     {/* {remainCard === 0 && <GameResult moves={move} time={time} onClickRestart={restart}/>} */}
     </div>
   );
 }
