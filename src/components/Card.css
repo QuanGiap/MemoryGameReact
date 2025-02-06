@@ -1,0 +1,52 @@
+.card{
+    width: 50px;
+    height: 72.6px;
+    background-color: transparent;
+    perspective: 1000px;
+  }
+  .card_inner{
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transition:transform 0.3s;
+    /* allow card to show the back side */
+    transform-style: preserve-3d;
+  }
+  .card_image{
+    width: 50px;
+  }
+  .card_img_incorrect, .card_img_correct{
+    opacity: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+  }
+  .card_img_correct{
+    background-color: green;
+    animation: showing-out 0.5s 0.3s forwards;
+  }
+  .card_img_incorrect{
+    background-color: red;
+    animation: showing-out 0.5s 0.3s linear alternate-reverse;
+  }
+  .card_img_correct.no_animation{
+    animation: showing-out 0s forwards;
+  }
+  .card.flipped .card_inner{
+    transform: rotateY(180deg);
+  }
+  /* keep card face up if matched */
+  .card.matched .card_inner{
+    transform: rotateY(180deg);
+  }
+  .card_front, .card_back{
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+  }
+  
+  .card_back{
+  transform: rotateY(180deg);
+  }
+  
