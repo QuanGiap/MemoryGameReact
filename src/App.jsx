@@ -40,6 +40,7 @@ function App() {
   );
   const timerIdRef = useRef(-1);
   const cardContainerRef = useRef(null);
+  //it is used to determine if card need to create or keep
   const cardIdRef = useRef(0);
   const [remainCard, setRemainCard] = useState(-1);
   const [move, setMove] = useState(Number(localStorage.getItem("moves")) || 0);
@@ -60,12 +61,12 @@ function App() {
     };
   }, []);
 
-  //save time
+  //save time to local storage
   const handleUnload = () => {
     localStorage.setItem("times", JSON.stringify(timer.getTime()));
   };
 
-  
+  // Load previous game state from local storage
   const loadPrevInfo = () => {
     cardContainerRef.current.style.gridTemplateColumns = `repeat(${level}, 1fr)`;
     let countRemain = 0;
@@ -81,6 +82,7 @@ function App() {
     timerIdRef.current = setInterval(updateTime, 1000);
   };
 
+  // Restart the game with the current settings
   const restart = () => {
     setStartType(1)
     localStorage.clear();
@@ -112,6 +114,7 @@ function App() {
     localStorage.setItem("cards_info", JSON.stringify(cards_cur));
   };
 
+  // Update the move count
   const updateMove = (newMove = -1) => {
     setMove((prev) => {
       const moveCur = newMove === -1 ? prev + 1 : newMove;
@@ -120,11 +123,13 @@ function App() {
     });
   };
 
+  // Update the elapsed time
   const updateTime = (restart = false) => {
     if (restart) setTime(0);
     else setTime((prevTime) => prevTime + 1);
   };
 
+  // Handle card click event
   const onClickCard = (flipped, card) => {
     if (flipped) {
       if (choices.length >= 1) {
